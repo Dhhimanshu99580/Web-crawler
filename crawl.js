@@ -53,29 +53,53 @@ function getURLsFromHTML(html,baseURL) {
 
 //function to crawl the webpage
 
-async function crawlPage(url) {
+async function crawlPage(baseUrl,currentUrl,pages) {
     try {
-      const response = await fetch(url, {
+      const response = await fetch(currentUrl, {
         method: 'GET',
       });
   
       if (response.status >= 400) {
-        console.log('Client-side issue:', response.status);
-        return;
+        console.log('Client-side issue:', response.status)
+        return pages
       }
   
-      const contentType = response.headers.get('Content-Type');
+      const contentType = response.headers.get('Content-Type')
   
       if (!contentType || !contentType.includes('text/html')) {
-        console.log('Response does not contain HTML/text:', contentType);
-        return;
+        console.log('Response does not contain HTML/text:', contentType)
+        return pages
       }
   
-       console.log('Content-Type:', contentType);
-       const htmlContent = await response.text();
-       console.log('HTML Content:', htmlContent);
+       console.log('Content-Type:', contentType)
+       const htmlContent = await response.text()
+       //console.log('HTML Content:', htmlContent)
+
+       //Now we need the list of urls inside this html text
+       const arr = getURLsFromHTML(htmlContent,currentUrl)
+       //console.log(arr)
+
+       if (arr.length==0) {
+        return pages
+       }
+       const myURL = new URL(baseUrl)
+
+       for(let i=0;i<arr.length;i++) {
+            const matchUrl = new URL(arr[i])
+           if(matchUrl.hostname===myURL.hostname) {
+                const normalizedUrl = normalizeURL(arr[i])
+                if(normalizedUrl in pages) {
+                    pages[normalizedUrl] = pages[normalizedUrl]+1
+                } else {
+                    pages[normalizedUrl] = 1
+                }
+                pages = crawlPage(baseUrl,arr[i],pages)
+           }
+       }
+       return pages
+       
     } catch (error) {
-      console.error('Error:', error.message);
+      console.error('Error:', error.message)
     }
   }
   

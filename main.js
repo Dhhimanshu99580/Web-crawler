@@ -7,7 +7,9 @@ function main() {
     console.log("Invalid Cli argument")
   } else {
     console.log("Hold on...I will start the crawl for..",argv[2])
-    crawlPage(argv[2])
+    let pages = {}
+    pages = crawlPage(argv[2],argv[2],pages)
+    console.log(pages)
   }
 }
 
