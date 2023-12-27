@@ -53,54 +53,51 @@ function getURLsFromHTML(html,baseURL) {
 
 //function to crawl the webpage
 
-async function crawlPage(baseUrl,currentUrl,pages) {
-    try {
-      const response = await fetch(currentUrl, {
-        method: 'GET',
-      });
+async function crawlPage(baseURL,currentURL,pages) {
+     // if this is an offsite URL, bail immediately
+  const currentUrlObj = new URL(currentURL)
+  const baseUrlObj = new URL(baseURL)
+  if (currentUrlObj.hostname !== baseUrlObj.hostname){
+    return pages
+  }
   
-      if (response.status >= 400) {
-        console.log('Client-side issue:', response.status)
-        return pages
-      }
-  
-      const contentType = response.headers.get('Content-Type')
-  
-      if (!contentType || !contentType.includes('text/html')) {
-        console.log('Response does not contain HTML/text:', contentType)
-        return pages
-      }
-  
-       console.log('Content-Type:', contentType)
-       const htmlContent = await response.text()
-       //console.log('HTML Content:', htmlContent)
+  const normalizedURL = normalizeURL(currentURL)
 
-       //Now we need the list of urls inside this html text
-       const arr = getURLsFromHTML(htmlContent,currentUrl)
-       //console.log(arr)
+  if (pages[normalizedURL] > 0){
+    pages[normalizedURL]++
+    return pages
+  }
 
-       if (arr.length==0) {
-        return pages
-       }
-       const myURL = new URL(baseUrl)
+  if (currentURL === baseURL){
+    pages[normalizedURL] = 0
+  } else {
+    pages[normalizedURL] = 1
+  }
 
-       for(let i=0;i<arr.length;i++) {
-            const matchUrl = new URL(arr[i])
-           if(matchUrl.hostname===myURL.hostname) {
-                const normalizedUrl = normalizeURL(arr[i])
-                if(normalizedUrl in pages) {
-                    pages[normalizedUrl] = pages[normalizedUrl]+1
-                } else {
-                    pages[normalizedUrl] = 1
-                }
-                pages = crawlPage(baseUrl,arr[i],pages)
-           }
-       }
-       return pages
-       
-    } catch (error) {
-      console.error('Error:', error.message)
+  //console.log(`crawling ${currentURL}`)
+  let htmlBody = ''
+  try {
+    const resp = await fetch(currentURL)
+    if (resp.status > 399){
+      console.log(`Got HTTP error, status code: ${resp.status}`)
+      return pages
     }
+    const contentType = resp.headers.get('content-type')
+    if (!contentType.includes('text/html')){
+      console.log(`Got non-html response: ${contentType}`)
+      return pages
+    }
+    htmlBody = await resp.text()
+  } catch (err){
+    console.log(err.message)
+  }
+
+  const nextURLs = getURLsFromHTML(htmlBody, baseURL)
+  for (const nextURL of nextURLs){
+    pages = await crawlPage(baseURL, nextURL, pages)
+  }
+
+  return pages
   }
   
 
