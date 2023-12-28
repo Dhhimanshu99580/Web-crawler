@@ -10,6 +10,7 @@ async function main() {
     let pages = {}
     pages = await crawlPage(argv[2],argv[2],pages)
     console.log(pages)
+    console.log(Object.keys(pages).length)
   }
 }
 

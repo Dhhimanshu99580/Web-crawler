@@ -54,7 +54,7 @@ function getURLsFromHTML(html,baseURL) {
 //function to crawl the webpage
 
 async function crawlPage(baseURL,currentURL,pages) {
-     // if this is an offsite URL, bail immediately
+     
   const currentUrlObj = new URL(currentURL)
   const baseUrlObj = new URL(baseURL)
   if (currentUrlObj.hostname !== baseUrlObj.hostname){
@@ -92,7 +92,8 @@ async function crawlPage(baseURL,currentURL,pages) {
     console.log(err.message)
   }
 
-  const nextURLs = getURLsFromHTML(htmlBody, baseURL)
+  const nextURLs = getURLsFromHTML(htmlBody, currentURL)
+  //console.log(nextURLs)
   for (const nextURL of nextURLs){
     pages = await crawlPage(baseURL, nextURL, pages)
   }
